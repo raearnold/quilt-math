@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en-us">
+  <!-- Copied over from https://codepen.io/raearnold/pen/NdNVWO for quick launch to Web. Nothing about this is good practice. -->
+  <head>
+      <meta charset="utf-8">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      <title>On Point Quilt Math</title>
+      <meta name="description" content="">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css"/>
+      <style type="text/css">
+        /* Hacking together extra styles on top of Bootstrap */
+
+        .hack {
+          padding-top: 4em; 
+        }
+
+        canvas {
+          display: block;
+          margin-left: auto;
+          margin-right: auto;
+        }
+        canvas:first-child {
+          margin-top: 1em;
+        }
+
+        [type='checkbox'] ~ .show-on-checked {
+          max-height: 0;
+          overflow: hidden;
+          -webkit-transition: max-height 250ms ease-out;
+          transition: max-height 250ms ease-out;
+        }
+        [type='checkbox'] ~ .no-toggle {
+          -webkit-transition: max-height 125ms;
+          transition: max-height 125ms;
+          max-height: 50px;
+          overflow: hidden;
+        }
+        [type='checkbox']:checked ~ .show-on-checked {
+          max-height: 200px;
+        }
+        [type='checkbox']:checked ~ .no-toggle {
+          max-height: 0;
+        }
+
+        #color-palette {
+          display: none;
+          border-top-color: #bada55;
+          border-right-color: #c0ffee;
+          border-bottom-color: rebeccapurple;
+          border-left-color: #b38cd9;
+        }
+
+        /* Sticky footer styles
+        -------------------------------------------------- */
+        html {
+          position: relative;
+          min-height: 100%;
+        }
+        body {
+          /* Margin bottom by footer height */
+          margin-bottom: 76px;
+        }
+        .footer {
+          position: absolute;
+          bottom: 0;
+          width: 100%;
+          /* Set the fixed height of the footer here */
+          height: 76px;
+          background-color: #f5f5f5;
+        }
+        .container .text-muted {
+          margin: 20px 0;
+        }
+      </style>
+
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js" async></script>     
+    </head>
+  <body>
+
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="#">Quilt Math</a>
+        </div>
+      </div>
+    </nav>
+
+    <div id='color-palette'></div>
+    <div class='container hack'>
+      <div class='row' id='on-point'>
+        <div class='col-md-3' id='on-point-canvas-container'>
+          <canvas class='center-block' id='on-point-canvas'></canvas>
+        </div>
+        <div class='col-md-9'>
+          <div class='col-xs-12'>
+            <h2>On-Point Math <button class="btn btn-sm btn-default pull-right active" id="show-as-fraction">Show decimals as fractions</button></h2>
+          </div>
+          <div class='col-xs-12'>
+            <p>Setting blocks on point can give a new look to your favorite blocks. By sewing the blocks in diagonal rows with triangles to fill in the ends, the quilt top comes together with minimal fuss.</p>
+            <p>Use this calculator to find out what size squares you need to cut to get your corner and setting triangles without having to worry about whether your bias grain is in the right place.</p>
+          </div>
+          <div class='col-lg-4 col-xs-12'>
+            <div class='form-group'>
+              <label for='block-size'>Finished Block Size</label>
+              <div class='input-group col-xs-7'>
+                <input aria-describedby='block-size-help' class='form-control' id='block-size' step='.25' type='number' value='6'>
+                <div class='input-group-addon'>inches</div>
+              </div>
+              <p class='help-block' id='block-size-help'>Your finished block size should not include seam allowances.</p>
+            </div>
+            <div class='form-group'>
+              <input class='sr-only' id='add-sashing' type='checkbox'>
+              <div class='show-on-checked'>
+                <label for='sashing-size'>Finished Sashing Size</label>
+                <div class='input-group col-xs-7'>
+                  <input aria-describedby='sashing-size-help' class='form-control' id='sashing-size' step='.25' type='number' value='2'>
+                  <div class='input-group-addon'>inches</div>
+                </div>
+                <p class='help-block' id='sashing-size-help'>Attach your sashing to blocks before adding corner or setting triangles.</p>
+                <label class='input-trigger' for='add-sashing'><i class="glyphicon glyphicon-minus"></i> Remove sashing</label>
+              </div>
+              <div class='form-group no-toggle'>
+                <label class='input-trigger' for='add-sashing'><i class="glyphicon glyphicon-plus"></i> Add sashing to calculation</label>
+              </div>
+            </div>
+            <canvas id='block-square-canvas'></canvas>
+          </div>
+          <div class='col-lg-4 col-sm-6 col-xs-12'>
+            <label for='corner-size'>Squares for Corner Triangles</label>
+            <div class='input-group col-xs-7'>
+              <input aria-describedby='corner-size-help' class='form-control' id='corner-size' readonly='readonly'>
+              <div class='input-group-addon'>inches</div>
+            </div>
+            <p class='help-block' id='corner-size-help'>Corner triangles are <strong>half square triangles</strong> (HSTs). Cut the square in half along one diagonal.</p>
+            <div class='form-group'>
+              <input class='sr-only' id='show-corner-equation' type='checkbox'>
+              <div class='show-on-checked'>
+                <pre>block" &divide; 1.414 + <span data-decimal=".875" data-fraction="7/8">7/8</span>"</pre>
+                <p class='help-block'>Calculate your square size, then round up to the nearest 1/8".</p>
+                <label class='input-trigger' for='show-corner-equation'><i class="glyphicon glyphicon-minus"></i> Hide equation</label>
+              </div>
+              <div class='form-group no-toggle'>
+                <label class='input-trigger' for='show-corner-equation'><i class="glyphicon glyphicon-plus"></i> Show equation</label>
+              </div>
+            </div>
+            <canvas id='corner-square-canvas'></canvas>
+          </div>
+          <div class='col-lg-4 col-sm-6 col-xs-12'>
+            <label for='setting-size'>Squares for Setting Triangles</label>
+            <div class='input-group col-xs-7'>
+              <input aria-describedby='setting-size-help' class='form-control' id='setting-size' readonly='readonly'>
+              <div class='input-group-addon'>inches</div>
+            </div>
+            <p class='help-block' id='setting-size-help'>Setting triangles are <strong>quarter square triangles</strong> (QSTs). Cut the square along both diagonals.</p>
+            <div class='form-group'>
+              <input class='sr-only' id='show-setting-equation' type='checkbox'>
+              <div class='show-on-checked'>
+                <pre>block" &times; 1.414 + <span data-decimal="1.25" data-fraction="1 1/4">1 1/4</span>"</pre>
+                <p class='help-block'>Calculate your square size, then round up to the nearest 1/8".</p>
+                <label class='input-trigger' for='show-setting-equation'><i class="glyphicon glyphicon-minus"></i> Hide equation</label>
+              </div>
+              <div class='form-group no-toggle'>
+                <label class='input-trigger' for='show-setting-equation'><i class="glyphicon glyphicon-plus"></i> Show equation</label>
+              </div>
+            </div>
+            <canvas id='setting-square-canvas'></canvas>
+          </div>
+        </div>
+        <div class='col-md-9 col-md-offset-3 col-xs-12'>
+          <h3>Common Block and Triangle Sizes</h3>
+          <table class='table table-condensed table-striped' id='common-size-table'>
+            <thead>
+              <tr>
+                <th>Block Size</th>
+                <th>Corner Triangles</th>
+                <th>Setting Triangles</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <p class="text-muted">Quilt Math is an alpha-status proof of concept project by <a href="http://raearnold.com">Rachael Arnold</a>. This page is provided for informational purposes only and is provided as-is with no warranty. Please test the measurements before cutting out your entire project.</p>
+      </div>
+    </footer>
+
+    <!-- TODO make this all async -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.7.3/fabric.min.js"></script> 
+    <script>
+      const SEAM_ALLOWANCE = .25,
+      HST_ALLOWANCE = 7/8,
+      QST_ALLOWANCE = 1.25,
+      SQUARE_ROOT_2 = Math.sqrt(2),
+      RULER_INCREMENT = 1/8,
+      COMMON_SIZES = [2, 3, 4, 6, 8, 10, 12, 16],
+      getAsRulerFraction = function (value) {
+         const reduce = function(x,y) {         
+          if ( (x/2) % 1 === 0 && (y/2) % 1 === 0) {
+            [x, y] = reduce(x/2, y/2);
+          }
+          return [x, y];
+        };
+        let remainder = value % 1,
+            numerator = remainder / RULER_INCREMENT,
+            denominator = 1 / RULER_INCREMENT;
+        
+        [numerator, denominator] = reduce(numerator, denominator);
+        
+        return numerator ? `${parseInt(value)} ${numerator}/${denominator}` 
+                         : `${parseInt(value)}`;
+        
+      },
+      roundToNextRulerIncrement = function (value, increment = RULER_INCREMENT ) {
+        let integer = parseInt(value),
+            decimal = parseFloat(value) % integer;
+
+        while ( decimal > 0 ) {
+          integer += increment;
+          decimal -= increment;
+        }
+        
+        return integer;
+      },
+      calculateCornerSquare = function (size){
+        let value = roundToNextRulerIncrement(size / SQUARE_ROOT_2) + HST_ALLOWANCE;
+        return (showAsFraction ? getAsRulerFraction(value) : value);
+      },
+      calculateSettingSquare = function (size){
+        let value = roundToNextRulerIncrement(size * SQUARE_ROOT_2) + QST_ALLOWANCE;
+        return (showAsFraction ? getAsRulerFraction(value) : value);
+      },
+      calculateSizes = function (size = blockSize) {
+        cornerSizeEl.value = calculateCornerSquare(size);
+        settingSizeEl.value = calculateSettingSquare(size);     
+      };
+
+      let blockSizeEl = document.getElementById('block-size'),
+          blockSize = blockSizeEl.value,
+          cornerSizeEl = document.getElementById('corner-size'),
+          settingSizeEl = document.getElementById('setting-size'),
+          showAsFractionEl = document.getElementById('show-as-fraction'),
+          showAsFraction = true,
+          showWithSashingToggle = document.getElementById('add-sashing'),
+          showWithSashing = false,
+          sashingSizeEl = document.getElementById('sashing-size'),
+          fractionEls = document.querySelectorAll('[data-decimal][data-fraction]');
+          
+      const blockSizeHandler = _.debounce(function(){
+              blockSize = parseInt(this.value);
+              if (showWithSashing) {
+                blockSize += parseInt(sashingSizeEl.value);
+              }
+              calculateSizes();
+            }, 500),
+            sashingSizeHandler = _.debounce(function(){
+              blockSize = parseInt(this.value) +  parseInt(blockSizeEl.value);
+              calculateSizes();
+            }, 500),
+            fractionToggleHandler = function(){
+              showAsFraction = !showAsFraction;
+              showAsFractionEl.classList.toggle('active');
+              calculateSizes();
+              generateTable();
+              
+              for (let i = 0; i < fractionEls.length; i++) {
+                fractionEls[i].innerHTML = showAsFraction 
+                        ? fractionEls[i].dataset.fraction 
+                        : fractionEls[i].dataset.decimal;
+              }
+            };
+
+      ['keyup', 'change'].forEach(function(e){
+        blockSizeEl.addEventListener(e,blockSizeHandler,false);
+        sashingSizeEl.addEventListener(e,sashingSizeHandler,false);
+      });
+      showAsFractionEl.addEventListener('click',fractionToggleHandler,false);
+      showWithSashingToggle.addEventListener('change',function(){
+          showWithSashing = !showWithSashing;
+          blockSize = parseInt(blockSizeEl.value);
+          if (showWithSashing) {
+            blockSize += parseInt(sashingSizeEl.value);
+          }
+          calculateSizes();
+      },false);
+
+      calculateSizes();
+
+      function generateTable(){
+
+        let commonSizeTable = document.getElementById('common-size-table'),
+            commonSizeTableBody = commonSizeTable.querySelector('tbody');
+       
+        while (commonSizeTableBody.firstChild) {
+          commonSizeTableBody.removeChild(commonSizeTableBody.firstChild);
+        }
+
+        for (let i = 0; i < COMMON_SIZES.length; i++ ) {
+          let tr = document.createElement('tr');
+
+          tr.appendChild(document.createElement('td'))
+            .appendChild(document.createTextNode(COMMON_SIZES[i]+"\""));
+
+          tr.appendChild(document.createElement('td'))
+            .appendChild( 
+                document.createTextNode(calculateCornerSquare(COMMON_SIZES[i])+"\"")
+            );
+
+          tr.appendChild(document.createElement('td'))
+            .appendChild( 
+                document.createTextNode(calculateSettingSquare(COMMON_SIZES[i])+"\"")
+            );
+
+          commonSizeTableBody.appendChild(tr); 
+        }
+        // commonSizeTable.classList.remove('hidden');
+      };
+      generateTable();
+
+      // + sashing option?
+
+      (function() {
+        const COLOR_PALETTE_STYLES = window.getComputedStyle(document.getElementById('color-palette')),
+              HST_COLOR = COLOR_PALETTE_STYLES.getPropertyValue('border-top-color'),
+              QST_COLOR = COLOR_PALETTE_STYLES.getPropertyValue('border-right-color'),
+              BLOCK_COLOR = COLOR_PALETTE_STYLES.getPropertyValue('border-bottom-color'),
+              SASHING_COLOR = COLOR_PALETTE_STYLES.getPropertyValue('border-left-color'),
+              STROKE_COLOR = '#222',
+              getHSTPoints = function(size = 100, rotate = false) {
+                let points = rotate ? [
+                              [{x:0,y:0},{x:size, y:0},{x:0, y:size}],
+                              [{x:0,y:size},{x:size, y:size},{x:size, y:0}]
+                             ] : [
+                              [{x:0,y:0},{x:size, y:size},{x:0, y:size}],
+                              [{x:0,y:0},{x:size, y:0},{x:size, y:size}]
+                             ];
+                return points;
+              },
+              drawHST = function(element, position = {left: 0, top: 0}, size = 100/1.141, stroke = STROKE_COLOR, fill = HST_COLOR) {
+                let canvas = this.__canvas = new fabric.StaticCanvas(element),
+                    gutter = 5,
+                    width = element.parentElement.offsetWidth;
+
+                canvas.setWidth(width);
+                canvas.setHeight(size+(gutter*2));
+                
+                canvas.add( 
+                  new fabric.Polygon(getHSTPoints(size)[0], {fill: fill, stroke: stroke, top: position.top + gutter, left: position.left}),
+                  new fabric.Polygon(getHSTPoints(size)[1], {fill: fill, stroke: stroke, top: position.top, left: position.left + gutter})
+                );
+                
+              },
+              getQSTPoints = function(size = 100) {
+                let points = [
+                              [{x:0,y:0},{x:size/2, y:size/2},{x:0, y:size}],
+                              [{x:0,y:0},{x:size, y:0},{x:size/2, y:size/2}],
+                              [{x:size,y:0},{x:size, y:size},{x:size/2, y:size/2}],                         [{x:0,y:size},{x:size/2, y:size/2},{x:size, y:size}]       
+                             ];
+                return points;
+              },
+              drawQST = function(element, position = {left: 0, top: 0}, size = 100, stroke = STROKE_COLOR, fill = QST_COLOR) {
+                let canvas = this.__canvas = new fabric.StaticCanvas(element),
+                    gutter = 5,
+                    width = element.parentElement.offsetWidth;
+
+                canvas.setWidth(width);
+                canvas.setHeight(size+(gutter*4));
+                
+                canvas.add( 
+                  new fabric.Polygon(getQSTPoints(size)[0], {fill: fill, stroke: stroke, top: position.top + gutter, left: position.left}),
+                  new fabric.Polygon(getQSTPoints(size)[1], {fill: fill, stroke: stroke, top: position.top, left: position.left + gutter}),
+                  new fabric.Polygon(getQSTPoints(size)[2], {fill: fill, stroke: stroke, top: position.top + gutter, left: position.left + size/2 + gutter*2}),
+                  new fabric.Polygon(getQSTPoints(size)[3], {fill: fill, stroke: stroke, top: position.top + size/2 + gutter*2, left: position.left + gutter})
+                );
+              },
+              drawBlock = function(element, position = {left: 0, top: 0}, size = 100, stroke = STROKE_COLOR, fill = BLOCK_COLOR, sashing = SASHING_COLOR) {
+                let canvas = this.__canvas = new fabric.StaticCanvas(element),
+                    width = element.parentElement.offsetWidth;
+
+                canvas.setWidth(width);
+                canvas.setHeight(size);
+                
+                canvas.add( 
+                  new fabric.Rect({ height: size, width: size, fill: fill, stroke: stroke, top: 0, left: 0 })
+                );
+                
+                if (showWithSashing) {
+                  let sashingSize = size/5;
+                  canvas.setHeight(size + sashingSize);
+                  canvas.add(
+                    new fabric.Rect({ height: size, width: sashingSize, fill: sashing, stroke: stroke, top: 0, left: size }),
+                    new fabric.Rect({ height: sashingSize, width: size+sashingSize, fill: sashing, stroke: stroke, top: size, left: 0 })
+                  );
+                }
+                
+              },
+              drawOnPointQuilt = function(element) {
+                let canvas = this.__canvas = new fabric.StaticCanvas(element),
+                    width = document.getElementById('on-point-canvas-container').offsetWidth,
+                    grid = width/5;
+                
+                if (width > 400) {
+                  width = 400;
+                  grid = width/5;
+                }
+                
+                canvas.setWidth(width);
+                canvas.setHeight(width);
+                     
+                canvas.add( 
+                  // Corner Triangles
+                  new fabric.Polygon(getHSTPoints(grid, true)[0], {fill: HST_COLOR, stroke: STROKE_COLOR, top: 0, left: 0}),
+                  new fabric.Polygon(getHSTPoints(grid)[0], {fill: HST_COLOR, stroke: STROKE_COLOR, top: grid*3, left: 0}),
+                  new fabric.Polygon(getHSTPoints(grid)[1], {fill: HST_COLOR, stroke: STROKE_COLOR, top: 0, left: grid*3}),
+                  new fabric.Polygon(getHSTPoints(grid, true)[1], {fill: HST_COLOR, stroke: STROKE_COLOR, top: grid*3, left: grid*3}),
+                  
+                  // Setting Triangles
+                  new fabric.Polygon(getQSTPoints(grid*2)[0], {fill: QST_COLOR, stroke: STROKE_COLOR, top: grid, left: 0}),
+                  new fabric.Polygon(getQSTPoints(grid*2)[1], {fill: QST_COLOR, stroke: STROKE_COLOR, top: 0, left: grid}),
+                  new fabric.Polygon(getQSTPoints(grid*2)[2], {fill: QST_COLOR, stroke: STROKE_COLOR, top: grid, left: grid*3}),
+                  new fabric.Polygon(getQSTPoints(grid*2)[3], {fill: QST_COLOR, stroke: STROKE_COLOR, top: grid*3, left: grid}),
+                  
+                  // Blocks
+                  new fabric.Rect({ height: grid*1.414, width: grid*1.414,  angle: 45, fill: BLOCK_COLOR, stroke: STROKE_COLOR, top: 0, left: grid }),
+                  new fabric.Rect({ height: grid*1.414, width: grid*1.414,  angle: 45, fill: BLOCK_COLOR, stroke: STROKE_COLOR, top: 0, left: grid*3 }),
+                  new fabric.Rect({ height: grid*1.414, width: grid*1.414,  angle: 45, fill: BLOCK_COLOR, stroke: STROKE_COLOR, top: grid*2, left: grid }),
+                  new fabric.Rect({ height: grid*1.414, width: grid*1.414,  angle: 45, fill: BLOCK_COLOR, stroke: STROKE_COLOR, top: grid*2, left: grid*3 }),
+                  new fabric.Rect({ height: grid*1.414, width: grid*1.414,  angle: 45, fill: BLOCK_COLOR, stroke: 'white', top: grid, left: grid*2 })
+                );
+              };  
+        let showWithSashing = false;
+        
+        drawHST(document.getElementById('corner-square-canvas'));
+        drawQST(document.getElementById('setting-square-canvas'));
+        drawBlock(document.getElementById('block-square-canvas'));
+        
+        drawOnPointQuilt(document.getElementById('on-point-canvas')); 
+        window.onresize = _.throttle(function() {
+            drawOnPointQuilt(document.getElementById('on-point-canvas'));
+          }, 500);
+        
+        document.getElementById('add-sashing').addEventListener('change', function(){
+          showWithSashing = !showWithSashing;
+          drawBlock(document.getElementById('block-square-canvas'));
+        },false);
+        
+      })();
+
+    </script>
+
+    </body>
+</html>
