@@ -195,51 +195,51 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.7.3/fabric.min.js"></script> 
     <script>
       const SEAM_ALLOWANCE = .25,
-      HST_ALLOWANCE = 7/8,
-      QST_ALLOWANCE = 1.25,
-      SQUARE_ROOT_2 = Math.sqrt(2),
-      RULER_INCREMENT = 1/8,
-      COMMON_SIZES = [2, 3, 4, 6, 8, 10, 12, 16],
-      getAsRulerFraction = function (value) {
-         const reduce = function(x,y) {         
-          if ( (x/2) % 1 === 0 && (y/2) % 1 === 0) {
-            [x, y] = reduce(x/2, y/2);
-          }
-          return [x, y];
-        };
-        let remainder = value % 1,
-            numerator = remainder / RULER_INCREMENT,
-            denominator = 1 / RULER_INCREMENT;
-        
-        [numerator, denominator] = reduce(numerator, denominator);
-        
-        return numerator ? `${parseInt(value)} ${numerator}/${denominator}` 
-                         : `${parseInt(value)}`;
-        
-      },
-      roundToNextRulerIncrement = function (value, increment = RULER_INCREMENT ) {
-        let integer = parseInt(value),
-            decimal = parseFloat(value) % integer;
+            HST_ALLOWANCE = 7/8,
+            QST_ALLOWANCE = 1.25,
+            SQUARE_ROOT_2 = Math.sqrt(2),
+            RULER_INCREMENT = 1/8,
+            COMMON_SIZES = [2, 3, 4, 6, 8, 10, 12, 16],
+            getAsRulerFraction = function (value) {
+               const reduce = function(x,y) {         
+                if ( (x/2) % 1 === 0 && (y/2) % 1 === 0) {
+                  [x, y] = reduce(x/2, y/2);
+                }
+                return [x, y];
+              };
+              let remainder = value % 1,
+                  numerator = remainder / RULER_INCREMENT,
+                  denominator = 1 / RULER_INCREMENT;
+              
+              [numerator, denominator] = reduce(numerator, denominator);
+              
+              return numerator ? `${parseInt(value)} ${numerator}/${denominator}` 
+                               : `${parseInt(value)}`;
+              
+            },
+            roundToNextRulerIncrement = function (value, increment = RULER_INCREMENT ) {
+              let integer = parseInt(value),
+                  decimal = parseFloat(value) % integer;
 
-        while ( decimal > 0 ) {
-          integer += increment;
-          decimal -= increment;
-        }
-        
-        return integer;
-      },
-      calculateCornerSquare = function (size){
-        let value = roundToNextRulerIncrement(size / SQUARE_ROOT_2) + HST_ALLOWANCE;
-        return (showAsFraction ? getAsRulerFraction(value) : value);
-      },
-      calculateSettingSquare = function (size){
-        let value = roundToNextRulerIncrement(size * SQUARE_ROOT_2) + QST_ALLOWANCE;
-        return (showAsFraction ? getAsRulerFraction(value) : value);
-      },
-      calculateSizes = function (size = blockSize) {
-        cornerSizeEl.value = calculateCornerSquare(size);
-        settingSizeEl.value = calculateSettingSquare(size);     
-      };
+              while ( decimal > 0 ) {
+                integer += increment;
+                decimal -= increment;
+              }
+              
+              return integer;
+            },
+            calculateCornerSquare = function (size){
+              let value = roundToNextRulerIncrement(size / SQUARE_ROOT_2) + HST_ALLOWANCE;
+              return (showAsFraction ? getAsRulerFraction(value) : value);
+            },
+            calculateSettingSquare = function (size){
+              let value = roundToNextRulerIncrement(size * SQUARE_ROOT_2) + QST_ALLOWANCE;
+              return (showAsFraction ? getAsRulerFraction(value) : value);
+            },
+            calculateSizes = function (size = blockSize) {
+              cornerSizeEl.value = calculateCornerSquare(size);
+              settingSizeEl.value = calculateSettingSquare(size);     
+            };
 
       let blockSizeEl = document.getElementById('block-size'),
           blockSize = blockSizeEl.value,
@@ -253,14 +253,14 @@
           fractionEls = document.querySelectorAll('[data-decimal][data-fraction]');
           
       const blockSizeHandler = _.debounce(function(){
-              blockSize = parseInt(this.value);
+              blockSize = this.value;
               if (showWithSashing) {
-                blockSize += parseInt(sashingSizeEl.value);
+                blockSize += sashingSizeEl.value;
               }
               calculateSizes();
             }, 500),
             sashingSizeHandler = _.debounce(function(){
-              blockSize = parseInt(this.value) +  parseInt(blockSizeEl.value);
+              blockSize = this.value +  blockSizeEl.value;
               calculateSizes();
             }, 500),
             fractionToggleHandler = function(){
@@ -283,9 +283,9 @@
       showAsFractionEl.addEventListener('click',fractionToggleHandler,false);
       showWithSashingToggle.addEventListener('change',function(){
           showWithSashing = !showWithSashing;
-          blockSize = parseInt(blockSizeEl.value);
+          blockSize = blockSizeEl.value;
           if (showWithSashing) {
-            blockSize += parseInt(sashingSizeEl.value);
+            blockSize += sashingSizeEl.value;
           }
           calculateSizes();
       },false);
@@ -451,6 +451,7 @@
         },false);
         
       })();
+
 
     </script>
 
